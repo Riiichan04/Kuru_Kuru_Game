@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuru Kuruuuuu ~~~</title>
+
+    <!-- JQuery -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+    <!-- Font Awesome -->
+    <script src="https://kit.fontawesome.com/2643e782c1.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="score--notice">
+        <div>Điểm của bạn:</div>
+        <div id="score">0</div>
+    </div>
+    <div id="score-area"></div>
+    <div id="button">Click Meeee!!!</div>
+
+    <script>
+        let basicSpeed = 50
+        let basicSpawnSpeed = 2500
+        let scoreGoal = 10
+
+        let mainInterval = null
+        function hertaInterval(basicSpeed, basicSpawnSpeed) {
+            mainInterval = setInterval(() => {
+                let moving = null
+                let cursor = Math.floor(Math.random() * 2) + 1
+
+                let img = document.createElement("img")
+                img.src = `data/img/hertaa${cursor}.gif`
+                img.className = "ele--img"
+                img.style.position = "absolute"
+                img.style.inlineSize = "25rem"
+                img.style.right = "-300px"
+                img.style.top = $("#button").offset().top + scrollY - 480 + "px"
+                img.style.zIndex = "-1"
+                document.body.appendChild(img)
+
+                let currentPos = -300
+                let limitPos = window.innerWidth
+                // Clear interval hiện tại
+                clearInterval(moving)
+                // Tạo interval mới
+                moving = setInterval(() => {
+                    if (currentPos >= limitPos) {
+                        clearInterval(moving)
+                        img.remove()
+                    }
+                    else {
+                        currentPos += 20
+                        img.style.right = currentPos + "px"
+                    }
+                }, basicSpeed)
+            }, basicSpawnSpeed)
+        }
+
+        hertaInterval(basicSpeed, basicSpawnSpeed)
+        $("#score-area").css({ 'top': $("#button").offset().top + scrollY - 400 + "px" })
+        document.getElementById("button").onclick = () => {
+            let areaScore = $("#score-area").offset().left + $("#score-area").width()
+            let elePos = document.getElementsByTagName("img")[0].offsetLeft
+
+            if (elePos <= areaScore) {
+                $("#score").text(parseInt($("#score").html()) + 1)
+                document.getElementsByTagName("img")[0].remove()
+            }
+
+            if (parseInt($("#score").html()) > scoreGoal) {
+                clearInterval(mainInterval)
+                if (basicSpeed >= 10) basicSpeed -= 2
+                if (basicSpawnSpeed >= 1000) basicSpawnSpeed -= 500
+                hertaInterval(basicSpeed, basicSpawnSpeed)
+                scoreGoal = Math.round(scoreGoal*1.5)
+            }
+        }
+
+
+
+    </script>
+</body>
