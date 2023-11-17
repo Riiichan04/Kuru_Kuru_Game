@@ -9,15 +9,111 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
     <!-- Font Awesome -->
     <script src="https://kit.fontawesome.com/2643e782c1.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body {
+            background-color: #fbffdc;
+            overflow: hidden;
+        }
+
+        .preload--img {
+            position: absolute;
+            left: 0;
+            top: 0;
+            visibility: hidden;
+        }
+
+        #score--notice {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 25px;
+            font-weight: 500;
+            position: absolute;
+            top: 5%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #score-area {
+            background-color: grey;
+            width: 16rem;
+            height: 16rem;
+            border-radius: 50%;
+            padding: 1.5%;
+            left: 0;
+            top: 0;
+            z-index: -3;
+            position: absolute;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1rem solid rgb(175, 175, 175);
+
+        }
+
+        #inline-score-area {
+            background-color: rgb(100, 100, 100);
+            width: 13rem;
+            height: 13rem;
+            border-radius: 50%;
+            padding: 1.5%;
+            left: 0;
+            top: 0;
+            z-index: -3;
+            cursor: pointer;
+            user-select: none;
+            border: 1rem solid rgb(120, 120, 120);
+        }
+
+        #button {
+            background-color: aquamarine;
+            width: fit-content;
+            padding: 1.5%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: larger;
+            font-weight: 600;
+            border-radius: 40px;
+            cursor: pointer;
+            user-select: none;
+            margin: auto;
+            margin-top: 70vh;
+        }
+
+        .ele--img {
+            position: absolute;
+            inline-size: 22rem;
+            right: -300px;
+            z-index: -2;
+        }
+
+        #bottom-area {
+            position: absolute;
+            top: 58vh;
+            z-index: -1;
+            background-color: rgb(30, 210, 33);
+            border-top: 2rem solid rgb(38, 255, 0);
+            color: yellow;
+            width: 100%;
+            height: 100%;
+            left: 0;
+        }
+    </style>
 </head>
 
 <body>
+    <!-- <audio src="/data/audio/bgaudio.mp3" autoplay hidden></audio> -->
     <div id="score--notice">
         <div>Điểm của bạn:</div>
         <div id="score">0</div>
     </div>
-    <div id="score-area"></div>
+    <div id="score-area">
+        <div id="inline-score-area"></div>
+    </div>
+    <div id="bottom-area"></div>
     <div id="button">Click Meeee!!!</div>
 
     <script>
@@ -32,13 +128,9 @@
                 let cursor = Math.floor(Math.random() * 2) + 1
 
                 let img = document.createElement("img")
-                img.src = `data/img/hertaa${cursor}.gif`
+                img.src = `data/img/herta${cursor}.gif`
                 img.className = "ele--img"
-                img.style.position = "absolute"
-                img.style.inlineSize = "25rem"
-                img.style.right = "-300px"
-                img.style.top = $("#button").offset().top + scrollY - 480 + "px"
-                img.style.zIndex = "-1"
+                img.style.top = $("#button").offset().top + scrollY - 430 + "px"
                 document.body.appendChild(img)
 
                 let currentPos = -300
@@ -60,26 +152,47 @@
         }
 
         hertaInterval(basicSpeed, basicSpawnSpeed)
-        $("#score-area").css({ 'top': $("#button").offset().top + scrollY - 400 + "px" })
+        $("#score-area").css({ 'top': $("#button").offset().top + scrollY - 418 + "px" })
         document.getElementById("button").onclick = () => {
             let areaScore = $("#score-area").offset().left + $("#score-area").width()
-            let elePos = document.getElementsByTagName("img")[0].offsetLeft
-
-            if (elePos <= areaScore) {
-                $("#score").text(parseInt($("#score").html()) + 1)
+            try {
+                let elePos = document.getElementsByTagName("img")[0].getBoundingClientRect().left + 30
+                if ((elePos <= areaScore && elePos > areaScore * 0.8) || (elePos < areaScore * 0.5)) setGoodScore()
+                else if (elePos <= areaScore * 0.8 && elePos >= areaScore * 0.5) setGreatScore()
+                else setMissScore()
                 document.getElementsByTagName("img")[0].remove()
             }
+            catch {
+                setMissScore()
+            }
+            setTimeout(() => {
+                $("#score-area").css({ 'background-color': 'grey', 'border': '1rem solid rgb(175, 175, 175)' })
+                $("#inline-score-area").css({ 'background-color': 'rgb(100, 100, 100)', 'border': '1rem solid rgb(120, 120, 120)' })
+            }, 500)
 
             if (parseInt($("#score").html()) > scoreGoal) {
                 clearInterval(mainInterval)
                 if (basicSpeed >= 10) basicSpeed -= 2
-                if (basicSpawnSpeed >= 1000) basicSpawnSpeed -= 500
+                if (basicSpawnSpeed > 500) basicSpawnSpeed -= 500
                 hertaInterval(basicSpeed, basicSpawnSpeed)
-                scoreGoal = Math.round(scoreGoal*1.5)
+                scoreGoal = Math.round(scoreGoal * 1.5)
             }
         }
 
+        function setGoodScore() {
+            $("#score").text(parseInt($("#score").html()) + 1)
+            $("#score-area").css({ 'background-color': 'rgb(0, 130, 0)', 'border': '1rem solid rgb(0, 150, 0)' })
+            $("#inline-score-area").css({ 'background-color': 'rgb(0, 90, 0)', 'border': '1rem solid rgb(0, 110 ,0)' })
+        }
+        function setGreatScore() {
+            $("#score").text(parseInt($("#score").html()) + 2)
+            $("#score-area").css({ 'background-color': 'rgb(200, 200, 0)', 'border': '1rem solid yellow' })
+            $("#inline-score-area").css({ 'background-color': 'rgb(150, 150, 0)', 'border': '1rem solid rgb(175, 175 ,0)' })
+        }
+        function setMissScore() {
+            $("#score-area").css({ 'background-color': 'rgb(200, 0, 0)', 'border': '1rem solid red' })
+            $("#inline-score-area").css({ 'background-color': 'rgb(150, 0, 0)', 'border': '1rem solid rgb(175, 0 ,0)' })
 
-
+        }
     </script>
 </body>
