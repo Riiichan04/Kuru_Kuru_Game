@@ -23,6 +23,25 @@
             visibility: hidden;
         }
 
+        #health-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 1rem;
+            width: 30rem;
+            border: 3px white solid;
+            border-radius: 0.75rem;
+        }
+
+        #current-health-bar {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1rem;
+            border-radius: 0.5rem;
+            background-color: gainsboro;
+        }
+
         #top-area {
             position: fixed;
             top: -20%;
@@ -45,6 +64,7 @@
             flex-direction: column;
             align-items: flex-end;
             color: white;
+            user-select: none;
         }
 
         #score {
@@ -118,11 +138,45 @@
             height: 100%;
             left: 0;
         }
+
+        #lose-frame {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10%;
+        }
+
+        #lose-frame--title {
+            font-size: 60px;
+        }
+
+        #lose-frame--replay-btn {
+            font-size: 25px;
+            background-color: teal;
+            width: fit-content;
+            padding: 1% 2%;
+            border-radius: 40px;
+            user-select: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 
 <body>
     <div id="top-area"></div>
+    <div id="health-bar">
+        <div id="current-health-bar"></div>
+    </div>
     <!-- <audio src="/data/audio/bgaudio.mp3" autoplay hidden></audio> -->
     <div id="score--notice">
         <div id="score">000000</div>
@@ -134,12 +188,22 @@
     <div id="bottom-area"></div>
     <div id="button">Click Meeee!!!<br><span style="font-size: medium; font-weight: 300;">Or press SpaceBar</span></div>
 
+    <div id="lose-frame">
+        <div id="lose-frame--title">BẠN ĐÃ THUA RỒI</div>
+        <div id="lose-frame--replay-btn">Chơi lại</div>
+    </div>
+
     <script>
         let basicSpeed = 50
         let basicSpawnSpeed = 2500
+
         let scoreGoal = 10
+
         let currentState = 0
         let countState = 0
+
+        let currentHealth = 100
+        let speedLoseHealth = 1
 
         let mainInterval = null
         function hertaInterval(basicSpeed, basicSpawnSpeed) {
@@ -162,9 +226,19 @@
             }, basicSpawnSpeed)
         }
 
+        //Main Function
         hertaInterval(basicSpeed, basicSpawnSpeed)
         isOutOfScreen()
 
+        //Event
+        document.addEventListener('keyup', (e) => {
+            if (e.code == "Space") {
+                $("#button").click()
+            }
+        })
+        $("#lose-frame--replay-btn").click(() => {
+            location.reload()
+        })
         $("#score-area").css({ 'top': $("#button").offset().top + scrollY - 418 + "px" })
         document.getElementById("button").onclick = () => {
             let areaScore = $("#score-area").offset().left + $("#score-area").width()
@@ -180,6 +254,11 @@
                     $("#accuracy").text(calculateAccuracy(parseInt($("#accuracy").html(), 10), parseInt($("#score").html(), 10)) + "%")
                     document.getElementsByTagName("img")[0].remove()
                 }
+                else if (elePos <= areaScore * 1.2 && elePos > areaScore) {
+                    setMissScore()
+                    $("#accuracy").text(calculateAccuracy(parseInt($("#accuracy").html(), 10), parseInt($("#score").html(), 10)) + "%")
+                    document.getElementsByTagName("img")[0].remove()
+                }
                 // else setMissScore()
             }
             catch {
@@ -192,21 +271,21 @@
                 if (basicSpawnSpeed > 500) basicSpawnSpeed -= 500
                 hertaInterval(basicSpeed, basicSpawnSpeed)
                 scoreGoal = Math.round(scoreGoal * 1.5)
+                if (speedLoseHealth > 5) speedLoseHealth = Math.round(speedLoseHealth * 1.5)
             }
         }
-        document.addEventListener('keyup', (e) => {
-            if (e.code == "Space") {
-                $("#button").click()
-            }
-        })
 
-
+        //Sub Function
         function setGoodScore() {
             $("#score").text(scoringProcess($("#score").html(), 1))
             $("#score-area").css({ 'background-color': 'rgb(0, 130, 0)', 'border': '1rem solid rgb(0, 150, 0)' })
             $("#inline-score-area").css({ 'background-color': 'rgb(0, 90, 0)', 'border': '1rem solid rgb(0, 110 ,0)' })
             currentState = 1
             countState++
+            if (currentHealth < 100) {
+                currentHealth += 0.25
+                $("#current-health-bar").css({ 'width': `${currentHealth}%` })
+            }
         }
         function setGreatScore() {
             $("#score").text(scoringProcess($("#score").html(), 2))
@@ -214,12 +293,23 @@
             $("#inline-score-area").css({ 'background-color': 'rgb(150, 150, 0)', 'border': '1rem solid rgb(175, 175 ,0)' })
             currentState = 2
             countState++
+            if (currentHealth < 100) {
+                currentHealth += 0.5
+                $("#current-health-bar").css({ 'width': `${currentHealth}%` })
+            }
         }
         function setMissScore() {
             $("#score-area").css({ 'background-color': 'rgb(200, 0, 0)', 'border': '1rem solid red' })
             $("#inline-score-area").css({ 'background-color': 'rgb(150, 0, 0)', 'border': '1rem solid rgb(175, 0 ,0)' })
             currentState = 0
             countState++
+            currentHealth -= speedLoseHealth
+            $("#current-health-bar").css({ 'width': `${currentHealth}%` })
+            if (currentHealth <= 0) {
+                clearInterval(mainInterval)
+                $("#lose-frame").css({ 'display': 'flex' })
+            }
+
         }
         function setDefaultState(timeout) {
             setTimeout(() => {
@@ -239,7 +329,7 @@
                     }
                 }
                 catch { }
-            }, 50)
+            }, 25)
         }
 
         function scoringProcess(currentScore, times) {
