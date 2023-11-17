@@ -23,17 +23,32 @@
             visibility: hidden;
         }
 
+        #top-area {
+            position: fixed;
+            top: -20%;
+            left: 0;
+            background-image: url(/data/img/topbg.png);
+            background-size: cover;
+            width: 100%;
+            height: 100vh;
+            z-index: -5;
+        }
+
         #score--notice {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 25px;
             font-weight: 500;
             position: absolute;
-            top: 5%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 0;
+            right: 1%;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-end;
+            color: white;
+        }
+
+        #score {
+            font-size: 40px;
         }
 
         #score-area {
@@ -70,7 +85,8 @@
         }
 
         #button {
-            background-color: aquamarine;
+            background-color: blueviolet;
+            color: white;
             width: fit-content;
             padding: 1.5%;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -81,6 +97,7 @@
             user-select: none;
             margin: auto;
             margin-top: 70vh;
+            text-align: center;
         }
 
         .ele--img {
@@ -94,9 +111,9 @@
             position: absolute;
             top: 58vh;
             z-index: -1;
-            background-color: rgb(30, 210, 33);
-            border-top: 2rem solid rgb(38, 255, 0);
-            color: yellow;
+            background-color: rgb(230, 255, 232);
+            /* background-color: rgb(30, 210, 33); */
+            border-top: 1rem solid rgb(38, 255, 0);
             width: 100%;
             height: 100%;
             left: 0;
@@ -105,21 +122,24 @@
 </head>
 
 <body>
+    <div id="top-area"></div>
     <!-- <audio src="/data/audio/bgaudio.mp3" autoplay hidden></audio> -->
     <div id="score--notice">
-        <div>Điểm của bạn:</div>
-        <div id="score">0</div>
+        <div id="score">000000</div>
+        <span id="accuracy">000<span>%</span></span>
     </div>
     <div id="score-area">
         <div id="inline-score-area"></div>
     </div>
     <div id="bottom-area"></div>
-    <div id="button">Click Meeee!!!</div>
+    <div id="button">Click Meeee!!!<br><span style="font-size: medium; font-weight: 300;">Or press SpaceBar</span></div>
 
     <script>
         let basicSpeed = 50
         let basicSpawnSpeed = 2500
         let scoreGoal = 10
+        let currentState = 0
+        let countState = 0
 
         let mainInterval = null
         function hertaInterval(basicSpeed, basicSpawnSpeed) {
@@ -135,42 +155,38 @@
 
                 let currentPos = -300
                 let limitPos = window.innerWidth
-                // Clear interval hiện tại
-                clearInterval(moving)
-                // Tạo interval mới
                 moving = setInterval(() => {
-                    if (currentPos >= limitPos) {
-                        clearInterval(moving)
-                        img.remove()
-                    }
-                    else {
-                        currentPos += 20
-                        img.style.right = currentPos + "px"
-                    }
+                    currentPos += 20
+                    img.style.right = currentPos + "px"
                 }, basicSpeed)
             }, basicSpawnSpeed)
         }
 
         hertaInterval(basicSpeed, basicSpawnSpeed)
+        isOutOfScreen()
+
         $("#score-area").css({ 'top': $("#button").offset().top + scrollY - 418 + "px" })
         document.getElementById("button").onclick = () => {
             let areaScore = $("#score-area").offset().left + $("#score-area").width()
             try {
                 let elePos = document.getElementsByTagName("img")[0].getBoundingClientRect().left + 30
-                if ((elePos <= areaScore && elePos > areaScore * 0.8) || (elePos < areaScore * 0.5)) setGoodScore()
-                else if (elePos <= areaScore * 0.8 && elePos >= areaScore * 0.5) setGreatScore()
-                else setMissScore()
-                document.getElementsByTagName("img")[0].remove()
+                if ((elePos <= areaScore && elePos > areaScore * 0.8) || (elePos < areaScore * 0.5)) {
+                    setGoodScore()
+                    $("#accuracy").text(calculateAccuracy(parseInt($("#accuracy").html(), 10), parseInt($("#score").html(), 10)) + "%")
+                    document.getElementsByTagName("img")[0].remove()
+                }
+                else if (elePos <= areaScore * 0.8 && elePos >= areaScore * 0.5) {
+                    setGreatScore()
+                    $("#accuracy").text(calculateAccuracy(parseInt($("#accuracy").html(), 10), parseInt($("#score").html(), 10)) + "%")
+                    document.getElementsByTagName("img")[0].remove()
+                }
+                // else setMissScore()
             }
             catch {
-                setMissScore()
+                // setMissScore()
             }
-            setTimeout(() => {
-                $("#score-area").css({ 'background-color': 'grey', 'border': '1rem solid rgb(175, 175, 175)' })
-                $("#inline-score-area").css({ 'background-color': 'rgb(100, 100, 100)', 'border': '1rem solid rgb(120, 120, 120)' })
-            }, 500)
-
-            if (parseInt($("#score").html()) > scoreGoal) {
+            setDefaultState(500)
+            if (parseInt($("#score").html(), 10) > scoreGoal) {
                 clearInterval(mainInterval)
                 if (basicSpeed >= 10) basicSpeed -= 2
                 if (basicSpawnSpeed > 500) basicSpawnSpeed -= 500
@@ -178,21 +194,88 @@
                 scoreGoal = Math.round(scoreGoal * 1.5)
             }
         }
+        document.addEventListener('keyup', (e) => {
+            if (e.code == "Space") {
+                $("#button").click()
+            }
+        })
+
 
         function setGoodScore() {
-            $("#score").text(parseInt($("#score").html()) + 1)
+            $("#score").text(scoringProcess($("#score").html(), 1))
             $("#score-area").css({ 'background-color': 'rgb(0, 130, 0)', 'border': '1rem solid rgb(0, 150, 0)' })
             $("#inline-score-area").css({ 'background-color': 'rgb(0, 90, 0)', 'border': '1rem solid rgb(0, 110 ,0)' })
+            currentState = 1
+            countState++
         }
         function setGreatScore() {
-            $("#score").text(parseInt($("#score").html()) + 2)
+            $("#score").text(scoringProcess($("#score").html(), 2))
             $("#score-area").css({ 'background-color': 'rgb(200, 200, 0)', 'border': '1rem solid yellow' })
             $("#inline-score-area").css({ 'background-color': 'rgb(150, 150, 0)', 'border': '1rem solid rgb(175, 175 ,0)' })
+            currentState = 2
+            countState++
         }
         function setMissScore() {
             $("#score-area").css({ 'background-color': 'rgb(200, 0, 0)', 'border': '1rem solid red' })
             $("#inline-score-area").css({ 'background-color': 'rgb(150, 0, 0)', 'border': '1rem solid rgb(175, 0 ,0)' })
+            currentState = 0
+            countState++
+        }
+        function setDefaultState(timeout) {
+            setTimeout(() => {
+                $("#score-area").css({ 'background-color': 'grey', 'border': '1rem solid rgb(175, 175, 175)' })
+                $("#inline-score-area").css({ 'background-color': 'rgb(100, 100, 100)', 'border': '1rem solid rgb(120, 120, 120)' })
+            }, timeout)
+        }
 
+        function isOutOfScreen() {
+            setInterval(() => {
+                try {
+                    if (document.getElementsByTagName("img")[0].getBoundingClientRect().right - 30 < 0) {
+                        document.getElementsByTagName("img")[0].remove()
+                        setMissScore()
+                        setDefaultState(300)
+                    }
+                }
+                catch { }
+            }, 50)
+        }
+
+        function scoringProcess(currentScore, times) {
+            for (let i = 0; i < times; i++) {
+                currentScore = increaseNum(currentScore)
+            }
+            return currentScore
+        }
+
+        function increaseNum(stringNum) {
+            let index = stringNum.length - 1
+            if (stringNum.charAt(index) == "9") {
+                while (stringNum.charAt(index) == "9") {
+                    stringNum = setCharAt(stringNum, index--, "0")
+                }
+                if (index < 0) {
+                    stringNum = "0" + stringNum
+                    index++
+                }
+                stringNum = setCharAt(stringNum, index, parseInt(stringNum.charAt(index)) + 1 + "")
+            }
+            else {
+                stringNum = setCharAt(stringNum, stringNum.length - 1, parseInt(stringNum.charAt(index)) + 1 + "")
+            }
+            return stringNum
+        }
+        function setCharAt(str, index, chr) {
+            if (index > str.length - 1) return str;
+            return str.substring(0, index) + chr + str.substring(index + 1);
+        }
+
+        function calculateAccuracy(accuracy, score) {
+            if (countState == 1) return 50 * currentState
+            else {
+                result = ((accuracy * (countState - 1)) + currentState * 50) / countState
+                return (result == 100) ? 100 : Number(result).toFixed(2)
+            }
         }
     </script>
 </body>
