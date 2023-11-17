@@ -234,6 +234,7 @@
                     if (document.getElementsByTagName("img")[0].getBoundingClientRect().right - 30 < 0) {
                         document.getElementsByTagName("img")[0].remove()
                         setMissScore()
+                        $("#accuracy").text(calculateAccuracy(parseInt($("#accuracy").html(), 10), parseInt($("#score").html(), 10)) + "%")
                         setDefaultState(300)
                     }
                 }
